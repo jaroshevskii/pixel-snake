@@ -1,0 +1,22 @@
+{
+  "configurations": [
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Debug Snake",
+      "program": "${workspaceFolder:snake}/.build/debug/Snake",
+      "args": [],
+      "cwd": "${workspaceFolder:snake}",
+      "preLaunchTask": "swift: Build Debug Snake"
+    },
+    {
+      "type": "lldb",
+      "request": "launch",
+      "name": "Release Snake",
+      "program": "${workspaceFolder:snake}/.build/release/Snake",
+      "args": [],
+      "cwd": "${workspaceFolder:snake}",
+      "preLaunchTask": "swift: Build Release Snake"
+    }
+  ]
+}
