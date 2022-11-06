@@ -4,6 +4,56 @@
 
 import Raylib
 
+struct Point2D: Equatable {
+  var x, y: Int32
+}
+
+enum Movement {
+  case up, down, left, right
+
+  var isVertical: Bool { self == .up || self == .down }
+  var isHorizontal: Bool { self == .left || self == .right }
+}
+
+struct Snake {
+  private(set) var headPreviousPosition: Point2D
+  private(set) var rawHeadPosition: Vector2 {
+    willSet { headPreviousPosition = headPosition }
+  }
+
+  var movement: Movement
+  var speed: Float
+
+  var headPosition: Point2D {
+    get {
+      Point2D(x: Int32(rawHeadPosition.x), y: Int32(rawHeadPosition.y))
+    }
+    set(newHeadPosition) {
+      rawHeadPosition = Vector2(x: Float(newHeadPosition.x), y: Float(newHeadPosition.y))
+    }
+  }
+
+  init(headPosition: Point2D, movement: Movement, speed: Float) {
+    self.headPreviousPosition = headPosition
+    self.rawHeadPosition = Vector2(x: Float(headPosition.x), y: Float(headPosition.y))
+    self.movement = movement
+    self.speed = speed
+  }
+
+  mutating func move(deltaTime: Float) {
+    switch movement {
+    case .up:
+      rawHeadPosition.y -= speed * deltaTime
+    case .down:
+      rawHeadPosition.y += speed * deltaTime
+    case .left:
+      rawHeadPosition.x -= speed * deltaTime
+    case .right:
+      rawHeadPosition.x += speed * deltaTime
+    }
+  }
+}
+
 class Game {
   // 16:9
   // private let windowWidth: Int32 = 640
@@ -23,31 +73,9 @@ class Game {
   private let fieldRender: RenderTexture2D
   private let fieldPositionDraw: Vector2
 
-  struct Position2D {
-    var x: Int32, y: Int32
-  }
-
-  struct SnakeHead {
-    var position: Vector2
-    var positionOnField: Position2D {
-      Position2D(x: Int32(position.x), y: Int32(position.y))
-    }
-
-    enum Movement {
-      case up, down, left, right
-
-      var isVertical: Bool { self == .up || self == .down }
-      var isHorizontal: Bool { self == .left || self == .right }
-    }
-
-    var movement: Movement
-    let speed: Float
-  }
-
-  private var snakeHead = SnakeHead(position: Vector2(x: 3, y: 3), movement: .right, speed: 12.5)
-  private var snakeTail = [Position2D]()
-
-  private var fruitPosition: Position2D
+  private var snake = Snake(headPosition: Point2D(x: 3, y: 3), movement: .right, speed: 12.5)
+  private var snakeTail = [Point2D]()
+  private var fruit: Point2D
 
   private var isPause = false
   private var isDeath = false
@@ -99,31 +127,29 @@ class Game {
       x: (Float(windowWidth) - Float(fieldRender.texture.width)) / 2,
       y: (Float(windowHeight) - Float(fieldRender.texture.height)) / 2
     )
-
-    fruitPosition = Position2D(
-      x: fieldWidth - Int32(snakeHead.position.x),
-      y: fieldHeight - Int32(snakeHead.position.y)
+    fruit = Point2D(
+      x: fieldWidth - 1 - snake.headPosition.x, y: fieldHeight - 1 - snake.headPosition.y
     )
   }
 
   private func input() {
-    if Raylib.isKeyPressed(.up) && snakeHead.movement.isHorizontal {
-      snakeHead.movement = .up
-    } else if Raylib.isKeyPressed(.down) && snakeHead.movement.isHorizontal {
-      snakeHead.movement = .down
-    } else if Raylib.isKeyPressed(.left) && snakeHead.movement.isVertical {
-      snakeHead.movement = .left
-    } else if Raylib.isKeyPressed(.right) && snakeHead.movement.isVertical {
-      snakeHead.movement = .right
+    if Raylib.isKeyPressed(.up) && snake.movement.isHorizontal {
+      snake.movement = .up
+    } else if Raylib.isKeyPressed(.down) && snake.movement.isHorizontal {
+      snake.movement = .down
+    } else if Raylib.isKeyPressed(.left) && snake.movement.isVertical {
+      snake.movement = .left
+    } else if Raylib.isKeyPressed(.right) && snake.movement.isVertical {
+      snake.movement = .right
     }
 
     if Raylib.isKeyPressed(.letterP) || Raylib.isKeyPressed(.enter) {
       isPause.toggle()
     }
     if Raylib.isKeyPressed(.letterR) || Raylib.isKeyPressed(.enter) {
-      snakeHead = SnakeHead(position: Vector2(x: 3, y: 3), movement: .right, speed: 12.5)
+      snake = Snake(headPosition: Point2D(x: 3, y: 3), movement: .right, speed: 10.0)
       snakeTail.removeAll()
-      isPause = false
+      isPause = true
       isDeath = false
     }
   }
@@ -133,54 +159,31 @@ class Game {
       return
     }
 
-    let previousPosition = snakeHead.positionOnField
-
-    switch snakeHead.movement {
-    case .up:
-      snakeHead.position.y -= snakeHead.speed * deltaTime
-    case .down:
-      snakeHead.position.y += snakeHead.speed * deltaTime
-    case .left:
-      snakeHead.position.x -= snakeHead.speed * deltaTime
-    case .right:
-      snakeHead.position.x += snakeHead.speed * deltaTime
-    }
+    snake.move(deltaTime: deltaTime)
 
     for snakeTailItem in snakeTail {
-      if snakeHead.positionOnField.x == snakeTailItem.x
-        && snakeHead.positionOnField.y == snakeTailItem.y
-      {
-        isDeath = true
-      }
+      if snake.headPosition == snakeTailItem { isDeath = true }
     }
 
-    if snakeHead.positionOnField.x != previousPosition.x
-      || snakeHead.positionOnField.y != previousPosition.y
-    {
-      snakeTail.append(previousPosition)
+    if snake.headPosition != snake.headPreviousPosition {
+      snakeTail.append(snake.headPreviousPosition)
       snakeTail.removeFirst()
     }
 
-    if snakeHead.positionOnField.x < 0 {
-      snakeHead.position.x = Float(fieldWidth - 1)
-    } else if snakeHead.positionOnField.x >= fieldWidth {
-      snakeHead.position.x = 0.0
-    }
-    if snakeHead.positionOnField.y < 0 {
-      snakeHead.position.y = Float(fieldHeight) - 1
-    } else if snakeHead.positionOnField.y >= fieldHeight {
-      snakeHead.position.y = 0.0
-    }
+    // if snake.headPosition.x < 0 {
+    //   snake.headPosition.x = fieldWidth - 1
+    // } else if snake.headPosition.x >= fieldWidth {
+    //   snake.headPosition.x = 0
+    // }
+    // if snake.headPosition.y < 0 {
+    //   snake.headPosition.y = fieldHeight - 1
+    // } else if snake.headPosition.y >= fieldHeight {
+    //   snake.headPosition.y = 0
+    // }
 
-    if Int32(snakeHead.position.x) == fruitPosition.x
-      && Int32(snakeHead.position.y) == fruitPosition.y
-    {
-      snakeTail.append(previousPosition)
-
-      fruitPosition = Position2D(
-        x: Int32.random(in: 0..<fieldWidth),
-        y: Int32.random(in: 0..<fieldHeight)
-      )
+    if snake.headPosition == fruit {
+      snakeTail.append(snake.headPreviousPosition)
+      fruit = Point2D(x: Int32.random(in: 0..<fieldWidth), y: Int32.random(in: 0..<fieldHeight))
     }
   }
 
@@ -200,29 +203,31 @@ class Game {
           width: Float(fieldSquareSize),
           height: Float(fieldSquareSize)
         ),
-        // .purple
+        // .green  // Classic themme
         Color(r: 83, g: 83, b: 115, a: 255)  // Dark themme
       )
     }
     // Draw snake head.
     Raylib.drawRectangleRec(
       Rectangle(
-        x: Float(snakeHead.positionOnField.x) * Float(fieldSquareSize) + fieldPositionDraw.x,
-        y: Float(snakeHead.positionOnField.y) * Float(fieldSquareSize) + fieldPositionDraw.y,
+        x: Float(snake.headPosition.x * fieldSquareSize) + fieldPositionDraw.x,
+        y: Float(snake.headPosition.y * fieldSquareSize) + fieldPositionDraw.y,
         width: Float(fieldSquareSize),
         height: Float(fieldSquareSize)
       ),
-      // .darkPurple
+      // .darkGreen  // Classic themme
       Color(r: 166, g: 166, b: 191, a: 255)  // Dark themme
     )
+
     // Draw fruit.
     Raylib.drawRectangleRec(
       Rectangle(
-        x: Float(fruitPosition.x) * Float(fieldSquareSize) + fieldPositionDraw.x,
-        y: Float(fruitPosition.y) * Float(fieldSquareSize) + fieldPositionDraw.y,
-        width: Float(fieldSquareSize), height: Float(fieldSquareSize)
+        x: Float(fruit.x * fieldSquareSize) + fieldPositionDraw.x,
+        y: Float(fruit.y * fieldSquareSize) + fieldPositionDraw.y,
+        width: Float(fieldSquareSize),
+        height: Float(fieldSquareSize)
       ),
-      // .red
+      // .red  // Classic theme
       // Color(r: 14, g: 14, b: 18, a: 255)  // Light themme
       Color(r: 230, g: 230, b: 236, a: 255)  // Dark themme
     )
@@ -238,24 +243,27 @@ class Game {
 
       let text = isPause ? "Pause" : "Death"
       let fontSize: Int32 = 30
-      let positionDraw = Position2D(
-        x: (windowWidth - Raylib.measureText(text, fontSize)) / 2, y: (windowHeight - fontSize) / 2)
+      let drawPosition = Point2D(
+        x: (windowWidth - Raylib.measureText(text, fontSize)) / 2,
+        y: (windowHeight - fontSize) / 2
+      )
 
       // Draw text.
-      Raylib.drawText(text, positionDraw.x, positionDraw.y, fontSize, .black)
+      Raylib.drawText(text, drawPosition.x, drawPosition.y, fontSize, .black)
     }
 
     Raylib.drawFPS(8, 8)
     Raylib.drawText(
       """
-      Snake head:
-          Position on field: \(snakeHead.positionOnField.x), \(snakeHead.positionOnField.y)
-          Speed: \(snakeHead.speed)
+      Snake:
+          Raw head position: \(snake.rawHeadPosition.x), \(snake.rawHeadPosition.y)
+          Head position: \(snake.headPosition.x), \(snake.headPosition.y)
+          Speed: \(snake.speed)
 
       Snake tail:
           Count: \(snakeTail.count)
       """, 8, 36, 10,
-      // .black
+      // .black  // Classic themme
       // Color(r: 14, g: 14, b: 18, a: 255)  // Light themme
       Color(r: 230, g: 230, b: 236, a: 255)  // Dark themme
     )
