@@ -2,5 +2,5 @@
 // Snake
 //
 
-let game = GameOld()
+let game = Game()
 game.run()
