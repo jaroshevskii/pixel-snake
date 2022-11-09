@@ -3,6 +3,6 @@
 //
 
 struct Point2D: Equatable {
-  let x: Int32
-  let y: Int32
+  var x: Int32
+  var y: Int32
 }

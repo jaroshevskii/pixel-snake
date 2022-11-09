@@ -22,22 +22,28 @@ struct Snake {
     }
   }
 
-  var headColor = Color(r: 166, g: 166, b: 191, a: 255)  // Dark themme
+  var tail = [Point2D]()
 
   var movement: Movement
   var speed: Float
 
-  var tail = [Point2D]()
-  var tailColor = Color(r: 83, g: 83, b: 115, a: 255)  // Dark themme
+  var headColor: Color
+  var tailColor: Color
 
-  init(headPosition: Point2D, movement: Movement, speed: Float) {
+  var isDeath = false
+
+  init(headPosition: Point2D, movement: Movement, speed: Float, headColor: Color, tailColor: Color)
+  {
     self.headPreviousPosition = headPosition
     self.rawHeadPosition = Vector2(x: Float(headPosition.x), y: Float(headPosition.y))
     self.movement = movement
     self.speed = speed
+    self.headColor = headColor
+    self.tailColor = tailColor
   }
 
   mutating func move(deltaTime: Float) {
+    // Move head
     switch movement {
     case .up:
       rawHeadPosition.y -= speed * deltaTime
@@ -47,6 +53,16 @@ struct Snake {
       rawHeadPosition.x -= speed * deltaTime
     case .right:
       rawHeadPosition.x += speed * deltaTime
+    }
+
+    // Move tail
+    if headPosition != headPreviousPosition {
+      tail.append(headPreviousPosition)
+      tail.removeFirst()
+    }
+
+    for tailItem in tail {
+      if headPosition == tailItem { isDeath = true }
     }
   }
 }

@@ -5,29 +5,41 @@
 import Raylib
 
 class Game {
-  // 21:9
-  private let windowWidth: Int32 = 840
-  private let windowHeight: Int32 = 360
-
   private var field: Field
   private var snake: Snake
   private var fruit: Fruit
 
-  init() {
-    Raylib.setConfigFlags(.vsyncHint)
-    Raylib.initWindow(windowWidth, windowHeight, "Snake")
+  private var isPause = false
 
-    field = Field(windowWidth: windowWidth, windowHeight: windowHeight)
+  private var textColor: Color
+
+  init(settings: Settings) {
+    if settings.isVsync {
+      Raylib.setConfigFlags(.vsyncHint)
+    }
+    Raylib.initWindow(settings.windowWidth, settings.windowHeight, "Snake")
+
+    field = Field(
+      squareSize: 20,
+      windowWidth: settings.windowWidth, windowHeight: settings.windowHeight,
+      backgroundColor: settings.theme.fieldBackgroundColor,
+      color: settings.theme.fieldColor
+    )
     snake = Snake(
       headPosition: Point2D(x: field.columnsCount / 4, y: field.rowsCount / 2),
       movement: .right,
-      speed: 15.0
+      speed: 15.0,
+      headColor: settings.theme.snakeHeadColor,
+      tailColor: settings.theme.snakeTailColor
     )
     fruit = Fruit(
       position: Point2D(
-        x: field.columnsCount - snake.headPosition.x, y: snake.headPosition.y
-      )
+        x: field.columnsCount - 1 - snake.headPosition.x, y: snake.headPosition.y
+      ),
+      color: settings.theme.fruitColor
     )
+
+    textColor = settings.theme.textColor
   }
 
   deinit {
@@ -35,22 +47,76 @@ class Game {
   }
 
   private func input() {
+    if Raylib.isKeyPressed(.letterP) {
+      isPause.toggle()
+    }
 
+    if isPause { return }
+
+    if Raylib.isKeyPressed(.up) && snake.movement.isHorizontal {
+      snake.movement = .up
+    } else if Raylib.isKeyPressed(.down) && snake.movement.isHorizontal {
+      snake.movement = .down
+    } else if Raylib.isKeyPressed(.left) && snake.movement.isVertical {
+      snake.movement = .left
+    } else if Raylib.isKeyPressed(.right) && snake.movement.isVertical {
+      snake.movement = .right
+    }
   }
 
   private func update(deltaTime: Float) {
+    if isPause { return }
 
+    snake.move(deltaTime: deltaTime)
+
+    if snake.headPosition.x < 0 {
+      snake.headPosition.x = field.columnsCount - 1
+    } else if snake.headPosition.x >= field.columnsCount {
+      snake.headPosition.x = 0
+    }
+    if snake.headPosition.y < 0 {
+      snake.headPosition.y = field.rowsCount - 1
+    } else if snake.headPosition.y >= field.rowsCount {
+      snake.headPosition.y = 0
+    }
+
+    if snake.headPosition == fruit.position {
+      snake.tail.append(snake.headPreviousPosition)
+      fruit.position = Point2D(
+        x: Int32.random(in: 0..<field.columnsCount), y: Int32.random(in: 0..<field.rowsCount)
+      )
+    }
   }
 
   private func draw() {
     Raylib.beginDrawing()
-    Raylib.clearBackground(
-      Color(r: 26, g: 26, b: 36, a: 255)  // Dark themme
+    Raylib.clearBackground(field.backgroundColor)
+
+    // MARK: Field
+
+    Raylib.drawTexture(
+      // Texture
+      field.render.texture,
+      // Position
+      field.renderDrawPosition.x, field.renderDrawPosition.y,
+      // Color
+      .white
     )
 
-    // Draw filed
-    Raylib.drawTexture(
-      field.render.texture, field.renderDrawPosition.x, field.renderDrawPosition.y, .white)
+    // MARK: Snake
+
+    // Draw snake tail
+    for tailItem in snake.tail {
+      Raylib.drawRectangleRec(
+        Rectangle(
+          x: Float(field.renderDrawPosition.x + tailItem.x * field.squareSize),
+          y: Float(field.renderDrawPosition.y + tailItem.y * field.squareSize),
+          width: Float(field.squareSize),
+          height: Float(field.squareSize)
+        ),
+        snake.tailColor
+      )
+    }
 
     // Draw snake head
     Raylib.drawRectangleRec(
@@ -63,20 +129,8 @@ class Game {
       snake.headColor
     )
 
-    // Draw snake tail
-    for snakeTailItem in snake.tail {
-      Raylib.drawRectangleRec(
-        Rectangle(
-          x: Float(field.renderDrawPosition.x + snakeTailItem.x * field.squareSize),
-          y: Float(field.renderDrawPosition.y + snakeTailItem.y * field.squareSize),
-          width: Float(field.squareSize),
-          height: Float(field.squareSize)
-        ),
-        snake.tailColor
-      )
-    }
+    // MARK: Fruit
 
-    // Draw fruit
     Raylib.drawRectangleRec(
       Rectangle(
         x: Float(field.renderDrawPosition.x + fruit.position.x * field.squareSize),
@@ -87,8 +141,16 @@ class Game {
       fruit.color
     )
 
-    Raylib.drawFPS(field.renderDrawPosition.x + 8, field.renderDrawPosition.y + 8)
+    // MARK: UI
+
+    Raylib.drawFPS(
+      // Position x
+      field.renderDrawPosition.x + 8,
+      // Postion y
+      field.renderDrawPosition.y + 8
+    )
     Raylib.drawText(
+      // Text
       """
       Field:
           Columns count: \(field.columnsCount)
@@ -102,11 +164,31 @@ class Game {
           X: \(fruit.position.x)
           Y: \(fruit.position.y)
       """,
+      // Position x
       field.renderDrawPosition.x + 8,
+      // Position y
       field.renderDrawPosition.y + 20 + 8 + 8,
+      // Font height
       10,
-      Color(r: 230, g: 230, b: 236, a: 255)  // Dark themme
+      // Color
+      textColor
     )
+
+    var text = "[  Snake  ]"
+    var fontSize: Int32 = 30
+    var drawPosition = Point2D(
+      x: (840 - Raylib.measureText(text, fontSize)) / 2,
+      y: (360 - fontSize) / 2
+    )
+    Raylib.drawText(text, drawPosition.x, drawPosition.y, fontSize, textColor)
+
+    text = "[  Play  |  Exit  ]"
+    fontSize = 20
+    drawPosition = Point2D(
+      x: (840 - Raylib.measureText(text, fontSize)) / 2,
+      y: (360 - fontSize) / 2 + 128
+    )
+    Raylib.drawText(text, drawPosition.x, drawPosition.y, fontSize, textColor)
 
     Raylib.endDrawing()
   }

@@ -2,5 +2,6 @@
 // Snake
 //
 
-let game = Game()
+let game = Game(settings: .default)
+
 game.run()
