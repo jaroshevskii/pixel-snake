@@ -4,6 +4,7 @@
 
 import Raylib
 
+@main
 class Game {
   private var field: Field
   private var snake: Snake
@@ -199,5 +200,10 @@ class Game {
       update(deltaTime: Raylib.getFrameTime())
       draw()
     }
+  }
+
+  static func main() {
+    let snakeGame = Game(settings: .default)
+    snakeGame.run()
   }
 }
