@@ -15,8 +15,8 @@ struct Settings {
 extension Settings {
   static let `default` = Settings(
     isVsync: true,
-    windowWidth: 840,
+    windowWidth: 640,
     windowHeight: 360,
-    theme: .dark
+    theme: .light
   )
 }

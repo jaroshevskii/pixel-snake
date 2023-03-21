@@ -150,46 +150,56 @@ class Game {
       // Postion y
       field.renderDrawPosition.y + 8
     )
+    // Raylib.drawText(
+    //   // Text
+    //   """
+    //   Field:
+    //       Columns count: \(field.columnsCount)
+    //       Rows count: \(field.rowsCount)
+
+    //   Snake head position:
+    //       X: \(snake.headPosition.x)
+    //       Y: \(snake.headPosition.y)
+
+    //   Fruit position:
+    //       X: \(fruit.position.x)
+    //       Y: \(fruit.position.y)
+    //   """,
+    //   // Position x
+    //   field.renderDrawPosition.x + 8,
+    //   // Position y
+    //   field.renderDrawPosition.y + 20 + 8 + 8,
+    //   // Font height
+    //   10,
+    //   // Color
+    //   textColor
+    // )
+
+    let text = "[ Swiftly Snake ]"
+    let textFontSize: Int32 = 40
+    let drawPosition = Point2D(
+      x: (640 - Raylib.measureText(text, textFontSize)) / 2,
+      y: (360 - textFontSize) / 2
+    )
+    Raylib.drawText(text, drawPosition.x, drawPosition.y, textFontSize, textColor)
+
+    let descripion = "[ Press any key to play ]"
+    let descriptionFontSize: Int32 = 10
+    let descriptionDrawPosition = Point2D(
+      x: (640 - Raylib.measureText(descripion, descriptionFontSize)) / 2,
+      y: 360 / 2 + (360 / 2 - descriptionFontSize) / 2
+    )
     Raylib.drawText(
-      // Text
-      """
-      Field:
-          Columns count: \(field.columnsCount)
-          Rows count: \(field.rowsCount)
+      descripion, descriptionDrawPosition.x, descriptionDrawPosition.y, descriptionFontSize,
+      textColor)
 
-      Snake head position:
-          X: \(snake.headPosition.x)
-          Y: \(snake.headPosition.y)
-
-      Fruit position:
-          X: \(fruit.position.x)
-          Y: \(fruit.position.y)
-      """,
-      // Position x
-      field.renderDrawPosition.x + 8,
-      // Position y
-      field.renderDrawPosition.y + 20 + 8 + 8,
-      // Font height
-      10,
-      // Color
-      textColor
-    )
-
-    var text = "[  Snake  ]"
-    var fontSize: Int32 = 30
-    var drawPosition = Point2D(
-      x: (840 - Raylib.measureText(text, fontSize)) / 2,
-      y: (360 - fontSize) / 2
-    )
-    Raylib.drawText(text, drawPosition.x, drawPosition.y, fontSize, textColor)
-
-    text = "[  Play  |  Exit  ]"
-    fontSize = 20
-    drawPosition = Point2D(
-      x: (840 - Raylib.measureText(text, fontSize)) / 2,
-      y: (360 - fontSize) / 2 + 128
-    )
-    Raylib.drawText(text, drawPosition.x, drawPosition.y, fontSize, textColor)
+    // text = "[  Play  |  Exit  ]"
+    // fontSize = 20
+    // drawPosition = Point2D(
+    //   x: (840 - Raylib.measureText(text, fontSize)) / 2,
+    //   y: (360 - fontSize) / 2 + 128
+    // )
+    // Raylib.drawText(text, drawPosition.x, drawPosition.y, fontSize, textColor)
 
     Raylib.endDrawing()
   }
