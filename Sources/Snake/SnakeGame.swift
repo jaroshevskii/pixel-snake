@@ -175,7 +175,7 @@ class Game {
     //   textColor
     // )
 
-    let text = "[ Swiftly Snake ]"
+    let text = "[ Pixel Snake ]"
     let textFontSize: Int32 = 40
     let drawPosition = Point2D(
       x: (640 - Raylib.measureText(text, textFontSize)) / 2,
@@ -187,7 +187,7 @@ class Game {
     let descriptionFontSize: Int32 = 10
     let descriptionDrawPosition = Point2D(
       x: (640 - Raylib.measureText(descripion, descriptionFontSize)) / 2,
-      y: 360 / 2 + (360 / 2 - descriptionFontSize) / 2
+      y: 360 / 2 + (360 / 4 - descriptionFontSize) / 2
     )
     Raylib.drawText(
       descripion, descriptionDrawPosition.x, descriptionDrawPosition.y, descriptionFontSize,
