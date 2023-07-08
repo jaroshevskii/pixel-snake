@@ -1,6 +1,5 @@
 <div align="center">
-  <h1><code>[ Pxel Snake ]</code></h1>
-  <p>There will be more description here in the future</p>
-  <p><code>[ ... ]</code></p>
+  <h1>Pxel Snake </h1>
+  <p>A game featuring a classic snake, presented with pixel art visuals.</p>
   <img src="Docs/Assets/Screenshot.png" alt="Screenshot">
 </div>
